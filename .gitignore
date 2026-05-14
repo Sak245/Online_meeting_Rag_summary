@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+
+.env
+
+data/
+exports/
+
+chromadb/
+vectorstore/
+
+*.sqlite3
+
+.DS_Store
+
+.streamlit/secrets.toml
