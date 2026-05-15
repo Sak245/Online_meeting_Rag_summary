@@ -1,3 +1,10 @@
-This transcript appears to be **lyrics from a song** (likely *"Happy Nation"* by **Ace of Base**) rather than a meeting transcript. Therefore, **no key decisions** can be extracted from it.
+This transcript appears to be **lyrics from a song** (likely *"Lily"* by **Ethel Cain** or a similar artist) rather than a **meeting transcript**. Therefore, there are **no key decisions** to extract.
 
-If you provide an actual **meeting transcript**, I’d be happy to summarize the key decisions concisely.
+If you meant to provide a **business/team meeting transcript**, please share the correct text, and I’ll extract concise key decisions for you.
+
+---
+**Example of what I’d return for a real meeting transcript:**
+- **Approved** budget increase for Q3 marketing by 15%.
+- **Assigned** John to lead the new client onboarding project (deadline: Oct 12).
+- **Postponed** product launch to Q1 2025 due to supply chain delays.
+- **Decided** to pilot remote work Fridays starting November.
