@@ -65,34 +65,28 @@ class MeetingRAG:
         )
 
         # =================================================
-        # VECTOR STORE
+        # VECTOR STORE (Lazy load)
         # =================================================
 
-        self.vector_store_manager = (
-            MeetingVectorStore()
-        )
+        self.vector_store_manager = None
+        self.vector_store = None
+        self.retriever = None
 
-        self.vector_store = (
-            self.vector_store_manager
-            .load_vector_store()
-        )
-
-        # =================================================
-        # RETRIEVER
-        # =================================================
-
-        self.retriever = (
-            self.vector_store.as_retriever(
-                search_type="similarity",
-                search_kwargs={
-                    "k": 4
-                },
-            )
-        )
-
-        print(
-            "\nRAG Pipeline Initialized"
-        )
+    def _ensure_vector_store(self):
+        """Lazy load vector store when needed."""
+        if self.vector_store is None:
+            from pathlib import Path
+            persist_path = Path("data/vectorstore")
+            if persist_path.exists() and any(persist_path.iterdir()):
+                self.vector_store_manager = MeetingVectorStore()
+                self.vector_store = self.vector_store_manager.load_vector_store()
+                self.retriever = self.vector_store.as_retriever(
+                    search_type="similarity",
+                    search_kwargs={"k": 4}
+                )
+                print("\nRAG Pipeline Initialized")
+            else:
+                raise ValueError("No transcript processed yet. Process a meeting first.")
 
     # =====================================================
     # RETRIEVE DOCUMENTS
@@ -105,6 +99,7 @@ class MeetingRAG:
         """
         Retrieve relevant transcript chunks.
         """
+        self._ensure_vector_store()
 
         documents = (
             self.retriever.invoke(query)

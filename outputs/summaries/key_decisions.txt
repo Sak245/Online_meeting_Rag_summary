@@ -1,10 +1,8 @@
-This transcript appears to be **lyrics from a song** (likely *"Lily"* by **Ethel Cain** or a similar artist) rather than a **meeting transcript**. Therefore, there are **no key decisions** to extract.
+This transcript appears to be **lyrical/poetic content** (possibly song lyrics or free-form expression) rather than a **meeting transcript**. There are **no clear, actionable decisions** or structured discussion points to extract.
 
-If you meant to provide a **business/team meeting transcript**, please share the correct text, and I’ll extract concise key decisions for you.
+If you intended to analyze a different document, please provide the correct **meeting transcript**, and I’ll extract the key decisions in concise bullet points.
 
 ---
-**Example of what I’d return for a real meeting transcript:**
-- **Approved** budget increase for Q3 marketing by 15%.
-- **Assigned** John to lead the new client onboarding project (deadline: Oct 12).
-- **Postponed** product launch to Q1 2025 due to supply chain delays.
-- **Decided** to pilot remote work Fridays starting November.
+**Note:** If this *is* the intended content, possible interpretations (non-business-related) could include:
+- Emotional themes: longing, freedom, pain, and dance as metaphorical release.
+- No concrete decisions—purely expressive/abstract.
