@@ -29,6 +29,7 @@ class Transcriber:
     ) -> None:
 
         self.sarvam_api_key = sarvam_api_key
+        self.model_size = model_size
 
         self.transcripts_dir = Path(
             transcripts_dir
@@ -39,21 +40,16 @@ class Transcriber:
             exist_ok=True,
         )
 
-        # =================================================
-        # WHISPER MODEL
-        # =================================================
+        # Lazy load Whisper model
+        self.whisper_model = None
 
-        print(
-            f"\nLoading Whisper Model: {model_size}"
-        )
-
-        self.whisper_model = (
-            whisper.load_model(model_size)
-        )
-
-        print(
-            "\nWhisper Model Loaded Successfully"
-        )
+    def _ensure_model(self):
+        """Lazy load Whisper model when needed."""
+        if self.whisper_model is None:
+            import whisper
+            print(f"\nLoading Whisper Model: {self.model_size}")
+            self.whisper_model = whisper.load_model(self.model_size)
+            print("\nWhisper Model Loaded Successfully")
 
     # =====================================================
     # LANGUAGE ROUTER
@@ -94,6 +90,9 @@ class Transcriber:
             f"\nWhisper Transcribing:\n"
             f"{chunk_path.name}"
         )
+
+        # Ensure model is loaded
+        self._ensure_model()
 
         result = (
             self.whisper_model.transcribe(
@@ -142,14 +141,28 @@ class Transcriber:
             self.sarvam_api_key
         }
 
+        # Determine content type
+        ext = chunk_path.suffix.lower()
+        content_types = {
+            ".wav": "audio/wav",
+            ".mp3": "audio/mpeg",
+            ".mp4": "audio/mp4",
+            ".m4a": "audio/mp4",
+            ".aac": "audio/aac",
+            ".ogg": "audio/ogg",
+            ".flac": "audio/flac",
+            ".webm": "audio/webm",
+        }
+        content_type = content_types.get(ext, "audio/wav")
+
         with open(chunk_path, "rb") as audio:
 
             files = {
-                "file": audio
+                "file": (chunk_path.name, audio, content_type)
             }
 
             data = {
-                "model": "saarika:v2",
+                "model": "saarika:v2.5",
                 "language_code": "hi-IN",
             }
 

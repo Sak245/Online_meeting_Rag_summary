@@ -10,6 +10,8 @@ Handles:
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
 from typing import List
 
 from langchain_core.documents import (
@@ -29,6 +31,11 @@ from langchain_openai import ChatOpenAI
 from core.vector_store import (
     MeetingVectorStore,
 )
+
+
+def _get_base_dir():
+    """Get the project base directory."""
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class MeetingRAG:
@@ -71,22 +78,64 @@ class MeetingRAG:
         self.vector_store_manager = None
         self.vector_store = None
         self.retriever = None
+        # Use absolute paths
+        base_dir = _get_base_dir()
+        self._transcript_path = os.path.join(base_dir, "data", "transcripts", "meeting_transcript.txt")
+        self._vectorstore_path = os.path.join(base_dir, "data", "vectorstore")
 
     def _ensure_vector_store(self):
-        """Lazy load vector store when needed."""
+        """Lazy load vector store when needed. Auto-recover from corruption."""
+        from pathlib import Path
+
+        # Check if we have a transcript
+        if not Path(self._transcript_path).exists():
+            raise ValueError("No transcript processed yet. Process a meeting first.")
+
+        # Check if vector store exists
+        vectorstore_path = Path(self._vectorstore_path)
+        has_existing = vectorstore_path.exists() and any(vectorstore_path.iterdir())
+
+        # If vector store not loaded, create it fresh from transcript
         if self.vector_store is None:
-            from pathlib import Path
-            persist_path = Path("data/vectorstore")
-            if persist_path.exists() and any(persist_path.iterdir()):
+            if not has_existing:
+                # No existing vector store - create one
+                print("Creating vector store from transcript...")
                 self.vector_store_manager = MeetingVectorStore()
+                self.vector_store_manager.ingest_transcript(self._transcript_path)
                 self.vector_store = self.vector_store_manager.load_vector_store()
                 self.retriever = self.vector_store.as_retriever(
                     search_type="similarity",
                     search_kwargs={"k": 4}
                 )
-                print("\nRAG Pipeline Initialized")
+                print("\nRAG Pipeline Created")
             else:
-                raise ValueError("No transcript processed yet. Process a meeting first.")
+                try:
+                    # Try to load existing
+                    self.vector_store_manager = MeetingVectorStore()
+                    self.vector_store = self.vector_store_manager.load_vector_store()
+                    self.retriever = self.vector_store.as_retriever(
+                        search_type="similarity",
+                        search_kwargs={"k": 4}
+                    )
+                    print("\nRAG Pipeline Initialized")
+                except Exception as e:
+                    print(f"Vector store corrupted, recreating: {e}")
+                    # Recreate from scratch
+                    self.vector_store = None
+                    self.retriever = None
+                    # Delete corrupted db
+                    import shutil
+                    shutil.rmtree(vectorstore_path, ignore_errors=True)
+                    vectorstore_path.mkdir(exist_ok=True)
+                    # Create fresh
+                    self.vector_store_manager = MeetingVectorStore()
+                    self.vector_store_manager.ingest_transcript(self._transcript_path)
+                    self.vector_store = self.vector_store_manager.load_vector_store()
+                    self.retriever = self.vector_store.as_retriever(
+                        search_type="similarity",
+                        search_kwargs={"k": 4}
+                    )
+                    print("\nRAG Pipeline Recreated")
 
     # =====================================================
     # RETRIEVE DOCUMENTS
@@ -101,9 +150,7 @@ class MeetingRAG:
         """
         self._ensure_vector_store()
 
-        documents = (
-            self.retriever.invoke(query)
-        )
+        documents = self.retriever.invoke(query)
 
         return documents
 

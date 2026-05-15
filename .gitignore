@@ -15,3 +15,5 @@ vectorstore/
 .DS_Store
 
 .streamlit/secrets.toml
+
+.claude 

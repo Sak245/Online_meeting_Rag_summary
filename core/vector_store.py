@@ -12,6 +12,7 @@ Handles:
 
 from __future__ import annotations
 
+import os
 import shutil
 
 from pathlib import Path
@@ -30,13 +31,16 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 
 
+def _get_base_dir():
+    """Get the project base directory."""
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
 class MeetingVectorStore:
 
     def __init__(
         self,
-        persist_directory: str = (
-            "data/vectorstore"
-        ),
+        persist_directory: str = None,
         collection_name: str = (
             "meeting_transcripts"
         ),
@@ -47,6 +51,11 @@ class MeetingVectorStore:
         chunk_size: int = 1000,
         chunk_overlap: int = 200,
     ) -> None:
+
+        # Use absolute path if not provided
+        if persist_directory is None:
+            base_dir = _get_base_dir()
+            persist_directory = os.path.join(base_dir, "data", "vectorstore")
 
         self.persist_directory = (
             persist_directory
@@ -60,6 +69,9 @@ class MeetingVectorStore:
 
         self.chunk_overlap = chunk_overlap
 
+        self._embedding_model_name = embedding_model
+        self._embedding_model = None
+
         # =================================================
         # TEXT SPLITTER
         # =================================================
@@ -71,23 +83,19 @@ class MeetingVectorStore:
             )
         )
 
-        # =================================================
-        # EMBEDDING MODEL
-        # =================================================
-
-        print(
-            "\nLoading Embedding Model..."
-        )
-
-        self.embedding_model = (
-            HuggingFaceEmbeddings(
-                model_name=embedding_model
+    def _ensure_embeddings(self):
+        """Lazy load embeddings."""
+        if self._embedding_model is None:
+            print("\nLoading Embedding Model...")
+            self._embedding_model = HuggingFaceEmbeddings(
+                model_name=self._embedding_model_name
             )
-        )
+            print("\nEmbedding Model Loaded")
 
-        print(
-            "\nEmbedding Model Loaded"
-        )
+    @property
+    def embedding_model(self):
+        self._ensure_embeddings()
+        return self._embedding_model
 
     # =====================================================
     # LOAD TRANSCRIPT
@@ -179,28 +187,22 @@ class MeetingVectorStore:
             "\nCreating Chroma Vector Store..."
         )
 
-        # ================================================
-        # RESET EXISTING VECTOR DB
-        # ================================================
+        # Delete and recreate the directory fresh
+        persist_path = Path(self.persist_directory)
 
-        persist_path = Path(
-            self.persist_directory
-        )
-
+        # Remove entire directory if exists
         if persist_path.exists():
+            try:
+                shutil.rmtree(persist_path)
+            except Exception as e:
+                print(f"Warning deleting old vector store: {e}")
 
-            print(
-                "\nDeleting Existing "
-                "Vector Store..."
-            )
-
-            shutil.rmtree(
-                persist_path
-            )
+        # Create fresh directory
+        persist_path.mkdir(parents=True, exist_ok=True)
 
         # ================================================
         # CREATE NEW VECTOR STORE
-        # ================================================
+        # =============================================
 
         vector_store = Chroma.from_documents(
             documents=documents,
@@ -230,6 +232,11 @@ class MeetingVectorStore:
         print(
             "\nLoading Existing Vector Store..."
         )
+
+        # Check if directory exists and has content
+        persist_path = Path(self.persist_directory)
+        if not persist_path.exists() or not any(persist_path.iterdir()):
+            raise ValueError(f"Vector store at {self.persist_directory} is empty or missing")
 
         vector_store = Chroma(
             persist_directory=(
@@ -307,7 +314,7 @@ class MeetingVectorStore:
 
         # ================================================
         # VECTOR STORE
-        # ================================================
+        # =============================================
 
         vector_store = (
             self.create_vector_store(

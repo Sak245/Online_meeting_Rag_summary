@@ -58,15 +58,14 @@ class MeetingSummarizer:
         )
 
         # =================================================
-        # LLM
+        # LLM (Lazy load)
         # =================================================
 
-        self.llm = ChatOpenAI(
-            model=model,
-            base_url=base_url,
-            api_key=api_key,
-            temperature=temperature,
-        )
+        self.llm = None
+        self.model = model
+        self.base_url = base_url
+        self.api_key = api_key
+        self.temperature = temperature
 
         # =================================================
         # TEXT SPLITTER
@@ -86,6 +85,17 @@ class MeetingSummarizer:
         self.output_parser = (
             StrOutputParser()
         )
+
+    def _ensure_llm(self):
+        """Lazy load LLM when needed."""
+        if self.llm is None:
+            from langchain_openai import ChatOpenAI
+            self.llm = ChatOpenAI(
+                model=self.model,
+                base_url=self.base_url,
+                api_key=self.api_key,
+                temperature=self.temperature,
+            )
 
     # =====================================================
     # LOAD TRANSCRIPT
@@ -402,6 +412,9 @@ Transcript:
         self,
         transcript_path: str | Path,
     ) -> dict:
+
+        # Ensure LLM is loaded
+        self._ensure_llm()
 
         # ================================================
         # LOAD TRANSCRIPT
