@@ -45,13 +45,49 @@ import streamlit as st
 
 from dotenv import load_dotenv
 
-from fpdf import FPDF
+# Lazy load heavy modules to avoid startup timeout
+AudioProcessor = None
+Transcriber = None
+MeetingSummarizer = None
+MeetingVectorStore = None
+MeetingRAG = None
+FPDF = None
 
-from core.audio_processor import AudioProcessor
-from core.transcriber import Transcriber
-from core.summarizer import MeetingSummarizer
-from core.vector_store import MeetingVectorStore
-from core.rag_chain import MeetingRAG
+def get_audio_processor():
+    global AudioProcessor
+    if AudioProcessor is None:
+        from core.audio_processor import AudioProcessor
+    return AudioProcessor
+
+def get_transcriber():
+    global Transcriber
+    if Transcriber is None:
+        from core.transcriber import Transcriber
+    return Transcriber
+
+def get_summarizer():
+    global MeetingSummarizer
+    if MeetingSummarizer is None:
+        from core.summarizer import MeetingSummarizer
+    return MeetingSummarizer
+
+def get_vector_store():
+    global MeetingVectorStore
+    if MeetingVectorStore is None:
+        from core.vector_store import MeetingVectorStore
+    return MeetingVectorStore
+
+def get_rag():
+    global MeetingRAG
+    if MeetingRAG is None:
+        from core.rag_chain import MeetingRAG
+    return MeetingRAG
+
+def get_fpdf():
+    global FPDF
+    if FPDF is None:
+        from fpdf import FPDF
+    return FPDF
 
 
 
@@ -166,6 +202,7 @@ def create_pdf(
 
         return text
 
+    FPDF = get_fpdf()
     pdf = FPDF()
 
     pdf.set_auto_page_break(
@@ -403,29 +440,25 @@ if st.button(
             ):
 
                 # =====================================
-                # INITIALIZE COMPONENTS
+                # INITIALIZE COMPONENTS (Lazy Load)
                 # =====================================
 
-                processor = AudioProcessor()
+                processor = get_audio_processor()()
 
-                transcriber = Transcriber(
+                transcriber = get_transcriber()(
                     sarvam_api_key=os.getenv(
                         "SARVAM_API_KEY"
                     ),
                     model_size=whisper_model,
                 )
 
-                summarizer = (
-                    MeetingSummarizer(
-                        api_key=os.getenv(
-                            "MISTRAL_API_KEY"
-                        )
+                summarizer = get_summarizer()(
+                    api_key=os.getenv(
+                        "MISTRAL_API_KEY"
                     )
                 )
 
-                vector_store = (
-                    MeetingVectorStore()
-                )
+                vector_store = get_vector_store()()
 
                 # =====================================
                 # AUDIO PROCESSING
@@ -538,7 +571,7 @@ if st.button(
                 # =====================================
 
                 st.session_state.rag = (
-                    MeetingRAG(
+                    get_rag()(
                         api_key=os.getenv(
                             "MISTRAL_API_KEY"
                         )
