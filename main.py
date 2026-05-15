@@ -19,15 +19,11 @@ Features:
 from __future__ import annotations
 import warnings
 import logging
-import transformers
 
 # Suppress warnings
 warnings.filterwarnings("ignore")
 
-# Reduce transformers logging
-transformers.logging.set_verbosity_error()
-
-# Reduce sentence-transformers logging
+# Reduce sentence-transformers logging (lazy load later)
 logging.getLogger(
     "sentence_transformers"
 ).setLevel(logging.ERROR)
