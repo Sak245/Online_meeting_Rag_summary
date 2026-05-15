@@ -38,6 +38,7 @@ logging.getLogger(
 
 
 import os
+import shutil
 from pathlib import Path
 
 import streamlit as st
@@ -307,7 +308,7 @@ with st.sidebar:
             "small",
             "medium",
         ],
-        index=1,
+        index=0,
     )
 
     st.markdown("---")
@@ -543,6 +544,13 @@ if st.button(
                         )
                     )
                 )
+
+                # Cleanup temp files to save space
+                try:
+                    shutil.rmtree("data/temp", ignore_errors=True)
+                    shutil.rmtree("data/chunks", ignore_errors=True)
+                except Exception:
+                    pass
 
             st.success(
                 "Meeting Processed Successfully"
