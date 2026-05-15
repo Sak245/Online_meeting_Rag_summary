@@ -8,10 +8,6 @@ yt-dlp>=2023.12.30
 pydub>=0.25.1
 openai-whisper>=20231117
 
-# PyTorch (CPU only for Render)
-torch>=2.0.0
-torchvision>=0.15.0
-
 # LLM Framework
 langchain>=0.1.0
 langchain-core>=0.1.0
@@ -35,3 +31,5 @@ requests>=2.31.0
 
 # HuggingFace
 transformers>=4.36.0
+torch>=2.0.0
+torchvision>=0.15.0

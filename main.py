@@ -70,7 +70,10 @@ def get_summarizer():
 def get_vector_store():
     global MeetingVectorStore
     if MeetingVectorStore is None:
-        from core.vector_store import MeetingVectorStore
+        # Import lazily to avoid torch import at startup
+        import importlib
+        core_module = importlib.import_module("core.vector_store")
+        MeetingVectorStore = core_module.MeetingVectorStore
     return MeetingVectorStore
 
 def get_rag():
